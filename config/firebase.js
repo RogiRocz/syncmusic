@@ -1,9 +1,9 @@
-const admin = require("firebase-admin")
-const serviceAccount = require("./serviceAccountKey.json")
+import admin, { initializeApp, credential as _credential } from "firebase-admin"
+import serviceAccount from "./serviceAccountKey.json"
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+initializeApp({
+    credential: _credential.cert(serviceAccount),
     databaseURL: process.env.FIREBASE_DATABASE_URL
 })
 
-module.exports = admin
+export default admin
