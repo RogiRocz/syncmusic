@@ -3,3 +3,4 @@ dist/
 .idx
 config/config.yaml
 config/serviceAccountKey.json
+logs/app.log
