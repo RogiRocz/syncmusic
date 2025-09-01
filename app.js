@@ -1,10 +1,12 @@
 import loadConfig from './config/readConfig.js';
 import express from 'express';
-import Logger from './logs/Logger.js';
+import routesLogs from './middleware/routesLogs.js'
 
 loadConfig();
 
 const app = express();
+
+app.use(routesLogs)
 
 app.get('/', (req, res) => {
   res.json(req.query);
