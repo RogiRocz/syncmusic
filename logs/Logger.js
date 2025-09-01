@@ -9,7 +9,7 @@ class Logger {
             timestamp: new Date().toLocaleString('pt-BR'),
         };
 
-        if(level == "debug")
+        if(level == "debug" || level == "warn")
             console.log(JSON.stringify(logData));
 
         if (level === 'info' || level === 'error') {
@@ -40,6 +40,10 @@ class Logger {
 
     static debug(message) {
         this.log('debug', message);
+    }
+
+    static warn(message){
+        this.log('warn', message);
     }
 
     static error(message) {
