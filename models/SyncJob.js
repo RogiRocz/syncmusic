@@ -1,7 +1,6 @@
-// src/models/SyncJob.js
-const Joi = require('joi');
+import Joi from 'joi';
 
-const syncJobSchema = Joi.object({
+export const syncJobSchema = Joi.object({
   id: Joi.string().optional(),
   userId: Joi.string().required().description('ID of user who created the sync job'),
   playlistId: Joi.string().required().description('ID of playlist to sync'),
@@ -28,16 +27,16 @@ const syncJobSchema = Joi.object({
   createdAt: Joi.date().default(Date.now)
 });
 
-const validateSyncJob = async (syncJob) => {
+export const validateSyncJob = async (syncJob) => {
   try {
     const result = await syncJobSchema.validateAsync(syncJob);
     return result;
   } catch (error) {
-    return error;
+    throw error;
   }
 };
 
-const validateSyncJobUpdate = async (updateData) => {
+export const validateSyncJobUpdate = async (updateData) => {
   const updateSchema = Joi.object({
     status: Joi.string(),
     progress: Joi.number().min(0).max(100),
@@ -47,7 +46,6 @@ const validateSyncJobUpdate = async (updateData) => {
       failedTracks: Joi.number().integer().min(0),
       skippedTracks: Joi.number().integer().min(0)
     }),
-    // Como funcionaria essa parte já que a validação tá sendo feita de maneira assincrona, como ele ia pegar os erros?
     errors: Joi.array().items(
       Joi.object({
         trackId: Joi.string().optional(),
@@ -63,10 +61,4 @@ const validateSyncJobUpdate = async (updateData) => {
     abortEarly: false,
     stripUnknown: true
   });
-};
-
-module.exports = {
-  syncJobSchema,
-  validateSyncJob,
-  validateSyncJobUpdate
 };

@@ -1,5 +1,5 @@
-const Joi = require("joi")
-const trackSchema = require("./Track").trackSchema
+import Joi from 'joi';
+import { trackSchema } from './Track.js';
 
 const playlistSchema = Joi.object({
     id: Joi.string().required().description("ID of the playlist"),
@@ -10,7 +10,6 @@ const playlistSchema = Joi.object({
     sourcePlataformId: Joi.string().max(200).required().description("ID of the source plataform of the playlist"),
     ownerId: Joi.string().required().description("ID of the owner of the playlist"),
     image: Joi.string().uri().optional().description("Image of the playlist"),
-    // Acho que preciso colocar quando as 'tracks' foram adicionadas na playlist, o updateAt não faz esse controle
     tracks: Joi.array().items(trackSchema).default([]).description("Tracks in the playlist"),
     syncStatus: Joi.object({
         lastSync: Joi.date().default(Date.now).optional().description("Date of the last sync"),
@@ -19,19 +18,18 @@ const playlistSchema = Joi.object({
     }).default({}),
     createdAt: Joi.date().default(Date.now).optional().description("Date of the creation of the playlist"),
     updatedAt: Joi.date().default(Date.now).optional().description("Date of the last update of the playlist")
-})
+});
 
 const validatePlaylist = async (playlist) => {
     try {
         const result = await playlistSchema.validateAsync(playlist, {
             stripUnknown: true
-        })
-        return result
+        });
+        return result;
     } catch (error) {
-        return error
+        return error;
     }
-}
-
+};
 
 // Precisa ser melhorado na hora de atualizar a playlist para caso foi excluída uma música
 const validatePlaylistUpdate = async (updateData) => {
@@ -42,13 +40,9 @@ const validatePlaylistUpdate = async (updateData) => {
         image: Joi.string().uri().optional().description("Image of the playlist"),
         tracks: Joi.array().items(trackSchema).description("Tracks in the playlist"),
         updateAt: Joi.date().default(Date.now).optional().description("Date of the last update of the playlist")
-    }).min(1)
+    }).min(1);
 
-    return await updateSchema.validateAsync(updateData, {stripUnknown: true})
-}
+    return await updateSchema.validateAsync(updateData, {stripUnknown: true});
+};
 
-module.exports = {
-    playlistSchema,
-    validatePlaylist,
-    validatePlaylistUpdate
-}
+export {playlistSchema, validatePlaylist, validatePlaylistUpdate }

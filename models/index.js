@@ -1,7 +1,7 @@
-import { validateTrack, validateTrackArray } from "./Track";
-import { validatePlaylist, validatePlaylistUpdate } from "./Playlist";
-import { validateUser, validateUserUpdate } from "./User";
-import { validateSyncJob, validateSyncJobUpdate } from "./SyncJob";
+import { validateTrack, validateTrackArray } from "./Track.js";
+import { validatePlaylist, validatePlaylistUpdate } from "./Playlist.js";
+import { validateUser } from "./User.js";
+import { validateSyncJob, validateSyncJobUpdate } from "./SyncJob.js";
 
 export {
     // Track
@@ -14,9 +14,8 @@ export {
 
     // User
     validateUser,
-    validateUserUpdate,
 
     // SyncJob
     validateSyncJob,
     validateSyncJobUpdate
-}
+};
