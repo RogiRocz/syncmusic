@@ -1,5 +1,5 @@
-import admin from '../config/firebase'
-import Logger from '../logs/Logger'
+import admin from '../config/firebase.js'
+import Logger from '../logs/Logger.js'
 
 const validateToken = async token => {
     try {
