@@ -8,8 +8,6 @@ class Logger {
             message,
             timestamp: new Date().toLocaleString('pt-BR'),
         };
-
-        if(level == "debug" || level == "warn")
             console.log(JSON.stringify(logData));
 
         if (level === 'info' || level === 'error') {

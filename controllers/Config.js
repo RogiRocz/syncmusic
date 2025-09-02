@@ -1,3 +1,4 @@
+import { StatusCodes } from 'http-status-codes';
 import Logger from '../logs/Logger.js';
 
 export const getFirebaseClientConfig = (req, res) => {
@@ -16,14 +17,14 @@ export const getFirebaseClientConfig = (req, res) => {
         for (const key in firebaseClientConfig) {
             if (!firebaseClientConfig[key]) {
                 Logger.error(`Configuração do Firebase para o cliente não encontrada na variável de ambiente: ${key.toUpperCase()}`);
-                return res.status(500).json({ message: 'Erro na configuração do servidor.' });
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Erro na configuração do servidor.' });
             }
         }
 
-        res.status(200).json(firebaseClientConfig);
+        res.status(StatusCodes.OK).json(firebaseClientConfig);
 
     } catch (error) {
         Logger.error(`Erro ao buscar a configuração do Firebase para o cliente: ${error.message}`);
-        res.status(500).json({ message: 'Erro interno do servidor.' });
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Erro interno do servidor.' });
     }
 };

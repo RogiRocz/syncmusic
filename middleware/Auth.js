@@ -1,3 +1,4 @@
+import { StatusCodes } from 'http-status-codes';
 import firebaseAdmin from '../config/firebase.js';
 import logger from '../logs/Logger.js';
 import validateToken from '../utils/FirebaseAuth.js';
@@ -8,7 +9,7 @@ export async function Auth(req, res, next) {
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             logger.warn('Acesso negado: Bearer token não fornecido ou mal formatado');
-            return res.status(401).json({
+            return res.status(StatusCodes.UNAUTHORIZED).json({
                 error: 'Acesso negado: Bearer token não fornecido ou mal formatado.',
                 code: 'MISSING_AUTH_TOKEN'
             });
@@ -22,7 +23,7 @@ export async function Auth(req, res, next) {
         next();
     } catch (error) {
         logger.error(`Erro de autenticação final no middleware: ${error.message}`);
-        return res.status(401).json({ 
+        return res.status(StatusCodes.UNAUTHORIZED).json({ 
             message: 'Acesso não autorizado.',
             code: error.code || 'AUTH_ERROR'
         });
