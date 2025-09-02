@@ -49,26 +49,21 @@
         
         let auth;
 
-        // Função principal assíncrona para inicializar o app
         async function initializeApp() {
             try {
-                // 1. Buscar a configuração do nosso backend
                 const response = await fetch('/api/config/firebase-client');
                 if (!response.ok) {
                     throw new Error(`Não foi possível buscar a configuração: ${response.statusText}`);
                 }
                 const firebaseConfig = await response.json();
 
-                // 2. Inicializa o Firebase com a configuração recebida
                 firebase.initializeApp(firebaseConfig);
                 auth = firebase.auth();
 
-                // 3. Habilita o botão de login e atualiza a mensagem
                 message.textContent = 'Pronto para o login!';
                 message.style.color = 'green';
                 loginBtn.disabled = false;
 
-                // 4. Anexa os listeners de eventos DEPOIS que o 'auth' foi inicializado
                 setupAuthListeners();
 
             } catch (error) {
@@ -135,7 +130,6 @@
             });
         }
 
-        // Inicia todo o processo quando o DOM estiver pronto
         document.addEventListener('DOMContentLoaded', initializeApp);
 
     </script>
