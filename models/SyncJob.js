@@ -5,6 +5,8 @@ export const syncJobSchema = Joi.object({
   userId: Joi.string().required().description('ID of user who created the sync job'),
   playlistId: Joi.string().required().description('ID of playlist to sync'),
   sourcePlatform: Joi.string().required(),
+  // Acho interessante criar o schema para plataform 
+  // para poder referenciar as plataformas que precisar sincronizar
   targetPlatforms: Joi.array().items(Joi.string()).min(1).required(),
   status: Joi.string(),
   progress: Joi.number().min(0).max(100).default(0),

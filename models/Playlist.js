@@ -1,5 +1,4 @@
 import Joi from 'joi';
-import { trackSchema } from './Track.js';
 
 const playlistSchema = Joi.object({
     id: Joi.string().required().description("ID of the playlist"),
@@ -10,7 +9,7 @@ const playlistSchema = Joi.object({
     sourcePlataformId: Joi.string().max(200).required().description("ID of the source plataform of the playlist"),
     ownerId: Joi.string().required().description("ID of the owner of the playlist"),
     image: Joi.string().uri().optional().description("Image of the playlist"),
-    tracks: Joi.array().items(trackSchema).default([]).description("Tracks in the playlist"),
+    tracks: Joi.array().items(Joi.string()).default([]).description("Tracks in the playlist"),
     syncStatus: Joi.object({
         lastSync: Joi.date().default(Date.now).optional().description("Date of the last sync"),
         lastSyncStatus: Joi.string().max(200).optional().description("Status of the last sync"),

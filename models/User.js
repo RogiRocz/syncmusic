@@ -1,10 +1,9 @@
 import Joi from 'joi';
-import { playlistSchema } from './Playlist.js';
 
 const userSchema = Joi.object({
-    uid: Joi.string().required().description("Firebase Auth UID"),
+    id: Joi.string().required().description("Firebase Auth UID"),
     email: Joi.string().email().required().description("Email of user"),
-    playlists: Joi.array().items(playlistSchema).default([]).description("List of playlist regristred by user"),
+    playlists: Joi.array().items(Joi.string()).default([]).description("List of playlist IDs that are regristred by user"),
     accessTokens: Joi.array().items(Joi.object({
        plataformName: Joi.string().optional().description("Name of the plataform"),
        userIdPlataform: Joi.string().optional().description("User ID in the plataform"),
