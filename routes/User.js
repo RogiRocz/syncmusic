@@ -1,5 +1,9 @@
-import Express from 'express'
-import router from Express.Router()
-import Logger from '../logs/Logger'
+import express from 'express';
+import { createUser } from '../controllers/User.js';
+import { Auth } from '../middleware/Auth.js';
 
-router.get('/:id', )
+const router = express.Router();
+
+router.post('/', Auth, createUser);
+
+export default router;

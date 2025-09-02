@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Auth Test</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f0f2f5; margin: 0; }
+        #message { color: #DB4437; font-size: 18px; margin-bottom: 20px; }
+        button { font-size: 16px; padding: 12px 24px; cursor: pointer; border-radius: 8px; border: none; color: white; }
+        #loginBtn { background-color: #4285F4; }
+        #logoutBtn { background-color: #DB4437; display: none; }
+        #userInfo, #apiResponse { margin-top: 20px; padding: 15px; background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 80%; max-width: 600px; word-wrap: break-word; }
+        h2 { border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        pre { white-space: pre-wrap; background-color: #eee; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <h1>Teste de Criação de Usuário com Firebase</h1>
+
+    <p id="message">Carregando configuração do servidor...</p>
+
+    <button id="loginBtn" disabled>Login com Google</button>
+    <button id="logoutBtn">Logout</button>
+
+    <div id="userInfo" style="display: none;">
+        <h2>Usuário Logado</h2>
+        <p><strong>UID:</strong> <span id="userUid"></span></p>
+        <p><strong>Email:</strong> <span id="userEmail"></span></p>
+    </div>
+
+    <div id="apiResponse" style="display: none;">
+        <h2>Resposta da API (/api/users)</h2>
+        <pre id="responseJson"></pre>
+    </div>
+
+    <!-- Importa o Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+
+    <script>
+        const message = document.getElementById('message');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userInfoDiv = document.getElementById('userInfo');
+        const apiResponseDiv = document.getElementById('apiResponse');
+        
+        let auth;
+
+        // Função principal assíncrona para inicializar o app
+        async function initializeApp() {
+            try {
+                // 1. Buscar a configuração do nosso backend
+                const response = await fetch('/api/config/firebase-client');
+                if (!response.ok) {
+                    throw new Error(`Não foi possível buscar a configuração: ${response.statusText}`);
+                }
+                const firebaseConfig = await response.json();
+
+                // 2. Inicializa o Firebase com a configuração recebida
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+
+                // 3. Habilita o botão de login e atualiza a mensagem
+                message.textContent = 'Pronto para o login!';
+                message.style.color = 'green';
+                loginBtn.disabled = false;
+
+                // 4. Anexa os listeners de eventos DEPOIS que o 'auth' foi inicializado
+                setupAuthListeners();
+
+            } catch (error) {
+                console.error("Erro de inicialização:", error);
+                message.textContent = `Erro de inicialização: ${error.message}`;
+                loginBtn.disabled = true;
+            }
+        }
+
+        function setupAuthListeners() {
+             // Função de Login
+            loginBtn.addEventListener('click', () => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithPopup(provider).catch((error) => {
+                    console.error("Erro no login com Google:", error);
+                    alert("Falha no login: " + error.message);
+                });
+            });
+
+            // Função de Logout
+            logoutBtn.addEventListener('click', () => {
+                auth.signOut();
+            });
+
+            // Observador do estado de autenticação
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    // --- USUÁRIO ESTÁ LOGADO ---
+                    loginBtn.style.display = 'none';
+                    logoutBtn.style.display = 'block';
+                    userInfoDiv.style.display = 'block';
+
+                    document.getElementById('userUid').textContent = user.uid;
+                    document.getElementById('userEmail').textContent = user.email;
+
+                    try {
+                        const idToken = await user.getIdToken();
+                        const response = await fetch('/api/users', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${idToken}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        const responseData = await response.json();
+                        apiResponseDiv.style.display = 'block';
+                        document.getElementById('responseJson').textContent = JSON.stringify(responseData, null, 2);
+                        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
+                    } catch (error) {
+                        console.error("Erro ao chamar a API:", error);
+                        apiResponseDiv.style.display = 'block';
+                        document.getElementById('responseJson').textContent = `Erro ao chamar a API:\n${error.message}`;
+                    }
+
+                } else {
+                    // --- USUÁRIO ESTÁ DESLOGADO ---
+                    loginBtn.style.display = 'block';
+                    logoutBtn.style.display = 'none';
+                    userInfoDiv.style.display = 'none';
+                    apiResponseDiv.style.display = 'none';
+                    message.textContent = 'Você foi desconectado.';
+                }
+            });
+        }
+
+        // Inicia todo o processo quando o DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+    </script>
+</body>
+</html>
