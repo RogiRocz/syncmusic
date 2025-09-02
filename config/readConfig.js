@@ -4,33 +4,34 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const setEnvVars = (config, prefix = '') => {
-  for (const chave in config) {
-    const valor = config[chave];
-    const nomeVariavelEnv = prefix ? `${prefix}_${chave.toUpperCase()}` : chave.toUpperCase();
+  for (const key in config) {
+    const value = config[key];
+    const envVarName = prefix ? `${prefix}_${key.toUpperCase()}` : key.toUpperCase();
 
-    if (typeof valor === 'object' && valor !== null && !Array.isArray(valor)) {
-      setEnvVars(valor, nomeVariavelEnv);
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      setEnvVars(value, envVarName);
     } else {
-      process.env[nomeVariavelEnv] = valor;
+      process.env[envVarName] = value;
     }
   }
 };
 
-function loadConfig() {
-  try {
-    const caminhoArquivo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'config.yaml');
-    const doc = yaml.load(fs.readFileSync(caminhoArquivo, 'utf8'));
+try {
+  const configPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'config.yaml');
+  const configFile = fs.readFileSync(configPath, 'utf8');
+  const doc = yaml.load(configFile);
 
-    const ambiente = process.env.NODE_ENV || 'development';
-    const configDoAmbiente = doc[ambiente];
+  const environment = process.env.NODE_ENV || 'development';
+  const environmentConfig = doc[environment];
 
-    setEnvVars(configDoAmbiente);
-
-    console.log("Configuração carregada com sucesso!");
-  } catch (e) {
-    console.log(`Erro na leitura da config.yaml. Erro: ${e}`);
-    process.exit(1);
+  if (environmentConfig) {
+    setEnvVars(environmentConfig);
+    console.log(`Configuração para o ambiente '${environment}' carregada com sucesso!`);
+  } else {
+    throw new Error(`Configuração para o ambiente '${environment}' não encontrada no config.yaml`);
   }
-}
 
-export default loadConfig;
+} catch (e) {
+  console.error(`Falha crítica ao ler o arquivo config.yaml. Erro: ${e.message}`);
+  process.exit(1);
+}
