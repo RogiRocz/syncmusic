@@ -2,13 +2,15 @@ import fs from 'fs';
 import path from 'path';
 
 class Logger {
-    static log(level, message) {
+    static log(level, message, details = {}) {
         const logData = {
             level,
             message,
             timestamp: new Date().toLocaleString('pt-BR'),
+            ...details
         };
-            console.log(JSON.stringify(logData));
+
+        console.log(JSON.stringify(logData, null, 2));
 
         if (level === 'info' || level === 'error') {
             const logPath = process.env.LOGGING_PATH;
@@ -32,20 +34,20 @@ class Logger {
         }
     }
 
-    static info(message) {
-        this.log('info', message);
+    static info(message, details = {}) {
+        this.log('info', message, details);
     }
 
-    static debug(message) {
-        this.log('debug', message);
+    static error(message, details = {}) {
+        this.log('error', message, details);
     }
 
-    static warn(message){
-        this.log('warn', message);
+    static warn(message, details = {}) {
+        this.log('warn', message, details);
     }
 
-    static error(message) {
-        this.log('error', message);
+    static debug(message, details = {}) {
+        this.log('debug', message, details);
     }
 }
 
