@@ -1,6 +1,6 @@
-# API de Gerenciamento de Usuários
+# API de Gerenciamento de Músicas e Playlists
 
-Esta é uma API RESTful construída com Node.js, Express e Firebase Admin SDK para gerenciar dados de usuários, incluindo informações básicas, preferências e tokens de acesso para outras plataformas.
+Esta é uma API RESTful construída com Node.js, Express e Firebase para gerenciar dados de usuários, playlists, um catálogo de músicas e configurações da aplicação.
 
 ## Principais Tecnologias
 
@@ -16,173 +16,165 @@ Esta é uma API RESTful construída com Node.js, Express e Firebase Admin SDK pa
 ```
 /
 |-- config/
+|   |-- config.yaml       # Arquivo central de configurações da aplicação
 |   |-- firebase.js       # Configuração e inicialização do Firebase Admin
+|   |-- readConfig.js     # Script que lê o config.yaml e popula as variáveis de ambiente
 |-- controllers/
-|   |-- User.js           # Lógica de requisição/resposta (Controllers)
+|   |-- Config.js         # Lógica de requisição/resposta para Config
+|   |-- Playlist.js       # Lógica de requisição/resposta para Playlists
+|   |-- Track.js          # Lógica de requisição/resposta para Tracks
+|   |-- User.js           # Lógica de requisição/resposta para Usuários
 |-- logs/
 |   |-- Logger.js         # Configuração da classe de Logging (Winston)
-|   |-- app.log           # Arquivo de log (se configurado)
+|   |-- app.log           # Arquivo de log gerado pela aplicação
 |-- middlewares/
-|   |-- Auth.js           # Middleware de autenticação com Firebase
+|   |-- Auth.js           # Middleware de autenticação e autorização
+|   |-- checkOwnership.js # Middleware para verificar posse de recursos
+|   |-- routesLogs.js     # Middleware para logar informações das rotas
 |-- models/
-|   |-- User.js           # Schemas de validação (Joi)
+|   |-- Playlist.js       # Schemas de validação para Playlists
+|   |-- SyncJob.js        # Schemas de validação para SyncJobs
+|   |-- Track.js          # Schemas de validação para Tracks
+|   |-- User.js           # Schemas de validação para Usuários
+|   |-- index.js          # Exportador central dos schemas
 |-- routes/
-|   |-- User.js           # Definição das rotas da API
+|   |-- Config.js         # Definição das rotas de Config
+|   |-- Playlist.js       # Definição das rotas de Playlists
+|   |-- Track.js          # Definição das rotas de Tracks
+|   |-- User.js           # Definição das rotas de Usuários
 |-- services/
-|   |-- User.js           # Lógica de negócio e interação com o banco de dados
-|-- .env.example          # Exemplo de arquivo de variáveis de ambiente
+|   |-- Playlist.js       # Lógica de negócio para Playlists
+|   |-- Track.js          # Lógica de negócio para Tracks
+|   |-- User.js           # Lógica de negócio para Usuários
+|-- .env.example          # Exemplo de variável de ambiente necessária
 |-- .gitignore
-|-- index.js              # Ponto de entrada da aplicação
+|-- app.js                # Ponto de entrada e configuração do Express
 |-- package.json
 |-- README.md
 ```
 
 ## Funcionalidades Principais
 
-- **Autenticação Segura**: Utiliza tokens JWT do Firebase para proteger as rotas.
-- **Autorização Baseada em Papéis**: Distingue entre usuários comuns e administradores. Um usuário só pode acessar ou modificar seus próprios dados, a menos que seja um administrador.
-- **Operações CRUD Completas**: Suporte para criar, ler, atualizar (parcial e total) e deletar usuários.
-- **Gerenciamento de Sub-recursos**: Endpoints específicos para gerenciar preferências e tokens de acesso de plataformas de terceiros.
-- **Validação de Dados**: Garante a integridade dos dados recebidos através de schemas de validação.
-- **Logging Detalhado**: Registra informações, avisos e erros, incluindo stack traces para depuração facilitada.
-- **Timestamps Automáticos**: Os campos `createdAt` e `updatedAt` são gerenciados automaticamente pelo servidor em todas as operações de escrita, garantindo um rastreamento preciso das alterações.
-- **Respostas de API Consistentes**: Operações de atualização (`PUT`, `PATCH`) retornam o objeto de usuário completo e atualizado, simplificando a sincronização de estado no lado do cliente.
+- **Gerenciamento de Configuração Centralizado**: Utiliza um arquivo `config.yaml` para gerenciar as configurações da aplicação (porta, chaves de cliente, etc.), que são carregadas dinamicamente no ambiente de execução.
+- **Autenticação Segura**: Utiliza tokens JWT do Firebase para proteger as rotas da v1.
+- **Autorização Baseada em Papéis**: Sistema de permissões que distingue entre usuários (`user`) e administradores (`admin`).
+- **Controle de Posse**: Middleware garante que usuários só possam acessar e modificar os próprios recursos.
+- **CRUD Completo**: Para Usuários, Playlists e Tracks.
+- **Configuração para o Cliente**: Uma rota pública fornece ao cliente as configurações necessárias para se conectar ao Firebase.
 
 ---
 
 ## Endpoints da API
 
-**Autenticação**: Todas as rotas (exceto as de health check) exigem um `Bearer Token` no cabeçalho `Authorization`.
+**Autenticação**: Rotas que exigem autenticação são marcadas e esperam um `Bearer Token` no cabeçalho `Authorization`.
 
 `Authorization: Bearer <seu-firebase-token>`
 
 ---
 
-### Usuários (`/api/users`)
+### Configuração (`/api/v1/config`)
 
-#### `POST /api/users`
-- **Descrição**: Cria um novo usuário no banco de dados. A função é acionada após o primeiro login bem-sucedido de um usuário Firebase, usando o `uid` e `email` do token.
-- **Resposta (201 CREATED)**: O objeto do novo usuário, incluindo `createdAt` e `updatedAt`.
-```json
-{
-  "id": "firebase-uid-123",
-  "email": "user@example.com",
-  "createdAt": 1678886400000,
-  "updatedAt": 1678886400000
-}
-```
+Endpoints para obter configurações públicas da aplicação.
 
-#### `GET /api/users`
-- **Descrição**: **(Admin)** Retorna uma lista paginada de todos os usuários.
-- **Resposta (200 OK)**:
-```json
-{
-  "users": [
-    {
-      "id": "firebase-uid-123",
-      "email": "user1@example.com",
-      "name": "User One"
-    }
-  ],
-  "nextCursor": "firebase-uid-124"
-}
-```
-
-#### `GET /api/users/:id`
-- **Descrição**: Retorna os dados de um usuário específico.
-- **Permissão**: Admin ou o próprio usuário.
-- **Resposta (200 OK)**: O objeto do usuário (sem os tokens de acesso).
-
-#### `PUT /api/users/:id`
-- **Descrição**: **Substitui completamente** todos os dados de um usuário. Campos não fornecidos no corpo da requisição serão removidos (ou definidos como `null`).
-- **Permissão**: Admin ou o próprio usuário.
-- **Corpo da Requisição**: Um objeto JSON com **todos** os campos do usuário.
-- **Resposta (200 OK)**: O objeto de usuário completo e atualizado.
-
-#### `PATCH /api/users/:id`
-- **Descrição**: **Atualiza parcialmente** os dados de um usuário. Apenas os campos fornecidos no corpo da requisição serão alterados.
-- **Permissão**: Admin ou o próprio usuário.
-- **Corpo da Requisição**: Um objeto JSON com os campos a serem atualizados.
-- **Resposta (200 OK)**: O objeto de usuário completo e atualizado.
-
-#### `DELETE /api/users/:id`
-- **Descrição**: Deleta um usuário do banco de dados.
-- **Permissão**: Admin ou o próprio usuário.
-- **Resposta**: `204 No Content`.
+#### `GET /firebase-client`
+- **Descrição**: Retorna o objeto de configuração do Firebase necessário para inicializar o SDK do Firebase no lado do cliente. Esta rota é pública e não requer autenticação.
+- **Permissão**: Pública.
 
 ---
 
-### Sub-Recursos do Usuário
+### Usuários (`/api/v1/users`)
 
-#### `GET /api/users/:id/tokens`
-- **Descrição**: Retorna todos os tokens de acesso de plataformas de terceiros para um usuário específico.
-- **Permissão**: Admin ou o próprio usuário.
-- **Resposta (200 OK)**:
-```json
-{
-  "spotify": { "accessToken": "...", "refreshToken": "...", "expiresIn": 3600 },
-  "deezer": { "accessToken": "...", "expiresIn": 3600 }
-}
-```
+Endpoints para gerenciar dados de usuários. **Requer Autenticação** para todas as rotas.
 
-#### `PUT /api/users/:id/tokens/:platformName`
-- **Descrição**: Cria ou atualiza (`upsert`) o token de acesso para uma plataforma específica.
-- **Permissão**: Admin ou o próprio usuário.
-- **Corpo da Requisição**: Objeto do token. Ex: `{"accessToken": "...", "expiresIn": 3600}`
-- **Resposta (200 OK)**: O objeto de usuário completo e atualizado, refletindo o `updatedAt`.
+- `POST /`: **Cria um novo usuário**. Acionado no primeiro login, extrai `uid` e `email` do token.
+- `GET /`: (**Admin**) Lista todos os usuários com paginação.
+- `GET /:id`: (**Admin ou Próprio Usuário**) Retorna um usuário específico.
+- `PUT /:id`: (**Admin ou Próprio Usuário**) Substitui dados de um usuário.
+- `PATCH /:id`: (**Admin ou Próprio Usuário**) Atualiza dados de um usuário.
+- `DELETE /:id`: (**Admin ou Próprio Usuário**) Deleta um usuário.
+- Sub-recursos: `/:id/tokens` e `/:id/preferences`.
 
-#### `GET /api/users/:id/preferences`
-- **Descrição**: Retorna as preferências de um usuário.
-- **Permissão**: Admin ou o próprio usuário.
-- **Resposta (200 OK)**: O objeto de preferências.
+---
 
-#### `PATCH /api/users/:id/preferences`
-- **Descrição**: Atualiza parcialmente as preferências de um usuário.
-- **Permissão**: Admin ou o próprio usuário.
-- **Corpo da Requisição**: Objeto com as preferências a serem atualizadas.
-- **Resposta (200 OK)**: O objeto de usuário completo e atualizado.
+### Playlists (`/api/v1/playlists`)
+
+Endpoints para gerenciar as playlists dos usuários. **Requer Autenticação** para todas as rotas.
+
+- `GET /`: Retorna as playlists do usuário autenticado, com suporte a filtros e paginação.
+- `POST /`: Cria uma nova playlist.
+- `GET /all`: (**Admin**) Retorna uma lista paginada de **todas** as playlists no sistema.
+- `GET /:id`: Retorna uma playlist específica (propriedade verificada).
+- `PUT /:id`: Substitui uma playlist (propriedade verificada).
+- `PATCH /:id`: Atualiza uma playlist (propriedade verificada).
+- `DELETE /:id`: Deleta uma playlist (propriedade verificada).
+- `POST /:id/tracks`: Adiciona uma faixa a uma playlist.
+- `DELETE /:id/tracks/:trackId`: Remove uma faixa de uma playlist.
+
+---
+
+### Tracks (`/api/v1/tracks`)
+
+Endpoints para gerenciar o catálogo global de músicas. **Requer Autenticação de Administrador** para todas as rotas.
+
+- `GET /`: Lista todas as músicas com paginação.
+- `POST /`: Adiciona uma nova música ao catálogo.
+- `GET /:id`: Retorna uma música específica.
+- `PATCH /:id`: Atualiza parcialmente uma música.
+- `DELETE /:id`: Deleta uma música.
+
+---
 
 ## Tratamento de Erros
 
-A API utiliza códigos de status HTTP padrão para comunicar o resultado das operações:
-
-- `200 OK`: Requisição bem-sucedida.
-- `201 Created`: Recurso criado com sucesso.
-- `204 No Content`: Requisição bem-sucedida, sem conteúdo para retornar (ex: após um `DELETE`).
-- `400 Bad Request`: Erro de validação ou requisição malformada.
-- `401 Unauthorized`: Token de autenticação ausente ou inválido.
-- `403 Forbidden`: O usuário está autenticado, mas não tem permissão para acessar o recurso.
-- `404 Not Found`: O recurso solicitado não foi encontrado.
-- `409 Conflict`: Conflito de estado, como tentar criar um usuário que já existe.
-- `500 Internal Server Error`: Ocorreu um erro inesperado no servidor. Os detalhes são registrados no log para depuração.
+A API utiliza códigos de status HTTP padrão para comunicar o resultado das operações (200, 201, 204, 400, 401, 403, 404, 500).
 
 ## Como Executar Localmente
 
-1.  **Clone o repositório:**
+Esta seção explica a abordagem de configuração híbrida do projeto para execução local.
+
+### Pré-requisitos
+
+- [Node.js](https://nodejs.org/) (versão 18 ou superior)
+- Uma conta Google para acessar o [Firebase](https://firebase.google.com/).
+
+### Passo 1: Configurar a Credencial de Serviço (Variável de Ambiente)
+
+A única credencial que deve ser gerenciada como uma variável de ambiente tradicional é a chave de serviço do Firebase Admin, por motivos de segurança.
+
+1.  Acesse seu projeto no [Firebase Console](https://console.firebase.google.com/).
+2.  Vá para **Configurações do projeto** > **Contas de serviço**.
+3.  Clique em **"Gerar nova chave privada"** para baixar o arquivo JSON.
+4.  Converta o conteúdo deste arquivo para uma string **Base64**.
+    -   **macOS**: `cat seu-arquivo.json | base64 | pbcopy`
+    -   **Linux**: `cat seu-arquivo.json | base64 | xclip -selection clipboard`
+5.  **Defina a variável de ambiente `FIREBASE_SERVICE_ACCOUNT_BASE64`**. Antes de iniciar a aplicação, você precisa exportar esta variável no seu terminal:
     ```bash
-    git clone <url-do-repositorio>
-    cd <nome-do-repositorio>
+    # Exemplo para Linux/macOS
+    export FIREBASE_SERVICE_ACCOUNT_BASE64="SUA_STRING_LONGA_EM_BASE64..."
     ```
 
-2.  **Instale as dependências:**
-    ```bash
-    npm install
+### Passo 2: Configurar a Aplicação (Arquivo YAML)
+
+Todas as outras configurações são gerenciadas no arquivo `config/config.yaml`.
+
+1.  **Configuração do Cliente Firebase**: No Firebase Console, vá para as configurações do seu projeto e, na aba "Geral", crie um **Aplicativo da Web** (`</>`). O Firebase fornecerá um objeto de configuração.
+2.  **Atualize o `config.yaml`**: Abra o arquivo e cole as informações do cliente Firebase e defina a porta do servidor sob a seção `development`:
+    ```yaml
+    development:
+      server:
+        port: 3000
+      firebase:
+        client:
+          apiKey: "AIza..."
+          authDomain: "seu-projeto.firebaseapp.com"
+          # ... etc
+    production:
+      # ...
     ```
 
-3.  **Configure as Variáveis de Ambiente:**
-    - Crie um arquivo `.env` na raiz do projeto, baseado no `.env.example`.
-    - Adicione as credenciais do seu projeto Firebase (geralmente como uma string JSON codificada em Base64).
-    - Configure a porta e o caminho para o arquivo de log.
+### Passo 3: Instale e Execute
 
-    ```env
-    PORT=3000
-    FIREBASE_SERVICE_ACCOUNT_BASE64=...
-    LOGGING_PATH=./logs/app.log
-    ```
+1.  Instale as dependências: `npm install`
+2.  Execute o servidor (após exportar a variável de ambiente): `npm start`
 
-4.  **Inicie o servidor:**
-    ```bash
-    npm start
-    ```
-
-A API estará disponível em `http://localhost:3000`.
+A aplicação será iniciada na porta definida em seu `config.yaml`.
