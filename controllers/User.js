@@ -28,38 +28,10 @@ import {
     deleteTrack as deleteTrackService
 } from '../services/Track.js';
 
-// --- Funções Auxiliares de Autorização ---
-const checkAuthorization = (req, res) => {
-    if (!req.user) {
-        res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized: Authentication token is missing or invalid.' });
-        return false;
-    }
-    const { id } = req.params;
-    const { uid: authenticatedUserId, isAdmin } = req.user;
-
-    if (isAdmin || id === authenticatedUserId) {
-        return true;
-    }
-
-    Logger.warn(`Authorization Failed: User ${authenticatedUserId} attempted to access resource for user ${id}.`);
-    res.status(StatusCodes.FORBIDDEN).json({ message: 'Forbidden: You do not have permission to perform this action.' });
-    return false;
-};
-
-const checkAdmin = (req, res) => {
-    if (req.user && req.user.isAdmin) {
-        return true;
-    }
-    res.status(StatusCodes.FORBIDDEN).json({ message: 'Forbidden: This action requires administrator privileges.' });
-    return false;
-};
-
 // --- Controllers ---
 
 const updatePreferences = async (req, res) => {
     try {
-        if (!checkAuthorization(req, res)) return;
-
         const { id } = req.params;
         const validatedData = await validateUserPreferences(req.body);
         const updatedPreferences = await updateUserPreferencesService(id, validatedData);
@@ -76,8 +48,6 @@ const updatePreferences = async (req, res) => {
 
 const replaceUser = async (req, res) => {
     try {
-        if (!checkAuthorization(req, res)) return;
-        
         const { id } = req.params;
         if (await getUserByIdService(id) == null) {
             return res.status(StatusCodes.NOT_FOUND).json({ message: 'User not found' });
@@ -98,8 +68,6 @@ const replaceUser = async (req, res) => {
 
 const upsertToken = async (req, res) => {
     try {
-        if (!checkAuthorization(req, res)) return;
-
         const { id, plataformName } = req.params;
         const validatedTokenData = await validateTokenData(req.body);
         const newOrUpdatedToken = await upsertAccessTokenService(id, plataformName, validatedTokenData);
@@ -116,10 +84,6 @@ const upsertToken = async (req, res) => {
 
 const createUser = async (req, res) => {
     try {
-        if (!req.user) {
-            return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized: No user information found.' });
-        }
-
         const initialUserData = { id: req.user.uid, email: req.user.email };
         const validatedUserData = await validateUserCreation(initialUserData);
 
@@ -140,8 +104,6 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
     try {
-        if (!checkAuthorization(req, res)) return;
-
         const { id } = req.params;
         const validatedData = await validateUserUpdate(req.body);
         const updatedUser = await updateUserService(id, validatedData);
@@ -162,8 +124,6 @@ const updateUser = async (req, res) => {
 
 const getUserById = async (req, res) => {
     try {
-        if (!checkAuthorization(req, res)) return;
-
         const user = await getUserByIdService(req.params.id);
         if (!user) {
             return res.status(StatusCodes.NOT_FOUND).json({ message: `User not found` });
@@ -177,8 +137,6 @@ const getUserById = async (req, res) => {
 
 const getUserTokens = async (req, res) => {
     try {
-        if (!checkAuthorization(req, res)) return;
-
         const tokens = await getUserTokensService(req.params.id);
         return res.status(StatusCodes.OK).json(tokens);
     } catch (error) {
@@ -189,8 +147,6 @@ const getUserTokens = async (req, res) => {
 
 const getUserPreferences = async (req, res) => {
     try {
-        if (!checkAuthorization(req, res)) return;
-
         const preferences = await getUserPreferencesService(req.params.id);
         return res.status(StatusCodes.OK).json(preferences);
     } catch (error) {
@@ -214,8 +170,6 @@ const getAllUsers = async (req, res) => {
 
 const getUserPlaylists = async (req, res) => {
     try {
-        if (!checkAuthorization(req, res)) return;
-
         const { id } = req.params;
         const user = await getUserByIdService(id);
         if (!user) {
@@ -232,8 +186,6 @@ const getUserPlaylists = async (req, res) => {
 
 const deleteUser = async (req, res) => {
     try {
-        if (!checkAuthorization(req, res)) return;
-
         const id = req.params.id;
 
         const user = await getUserById(id);
