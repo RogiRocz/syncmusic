@@ -12,25 +12,28 @@ import {
     updatePreferences,
     getUserPlaylists
 } from '../controllers/User.js';
-import { Auth } from '../middleware/Auth.js';
+import {isAuthenticaded, hasRole} from '../middleware/Auth.js'
+import {checkOwnership} from '../middleware/checkOwnership.js'
 
 const router = express.Router();
+router.use(isAuthenticaded)
 
-router.post('/', Auth, createUser);
+router.post('/', createUser);
 
-router.get('/:id', Auth, getUserById);
-router.get('/:id/tokens', Auth, getUserTokens);
-router.get('/:id/preferences', Auth, getUserPreferences);
-router.get('/:id/playlists', Auth, getUserPlaylists);
+router.get('/:id', checkOwnership, getUserById);
+router.get('/:id/tokens', checkOwnership, getUserTokens);
+router.get('/:id/preferences', checkOwnership, getUserPreferences);
+router.get('/:id/playlists', checkOwnership, getUserPlaylists);
 
 
-router.patch('/:id', Auth, updateUser);
-router.patch('/:id/tokens/:plataformName', Auth, upsertToken);
-router.put('/:id', Auth, replaceUser);
-router.patch('/:id', Auth, updatePreferences);
+router.put('/:id', checkOwnership, replaceUser);
+router.patch('/:id', checkOwnership, updateUser);
+router.patch('/:id/tokens/:plataformName', checkOwnership, upsertToken);
+router.patch('/:id', checkOwnership, updatePreferences);
+
+router.delete('/:id', checkOwnership, deleteUser);
 
 // As rotas abaixo são apenas para administradores
-router.delete('/:id', Auth, deleteUser);
-router.get('/', Auth, getAllUsers);
+router.get('/', hasRole('admin'), getAllUsers);
 
 export default router;

@@ -9,7 +9,8 @@ export const trackSchema = Joi.object({
     released: Joi.date().optional().description("Date the track was released"),
     duration: Joi.number().integer().min(0).optional().description("Duration of the track in seconds"),
     image: Joi.string().uri().optional().description("Image of the track"),
-    url: Joi.string().uri().optional().description("URL of the track")
+    url: Joi.string().uri().optional().description("URL of the track"),
+    playlistId: Joi.string().required().description("ID of the playlist the track belongs to")
 });
 
 export const validateTrack = async (track) => {
