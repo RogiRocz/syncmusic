@@ -6,8 +6,7 @@ const validateToken = async token => {
         const decodeToken = await admin.auth().verifyIdToken(token);
         return decodeToken;
     } catch (err) {
-        console.error('Erro ao validar token:', err);
-        Logger.error('Erro ao validar token:', err);
+        Logger.error(`Error in validate token. error: ${err.message}`);
         
         throw {
             code: err.code,
